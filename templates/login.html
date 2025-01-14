@@ -6,4 +6,19 @@
 </ul>
 
 {%endblock%}
+
+{%block content%}
+
+<h1>{{msg}}</h1>
+
+<form action= '/login' method = "POST">
+    <ul>
+       <li><input type="text" name= "username" placeholder="Inserisci username:"></li>
+       <li><input type = "password", name ="password", placeholder="Inserisci password:"></li>
+    </ul>
+            
+    <input type="submit" id="login" placeholder="Accedi">
+   
+</form>
+{%endblock%}
     

@@ -18,9 +18,28 @@ def home():
 
 
 
-@app.route("/login")
+@app.route("/login", methods = ["GET", "POST"])
 def login():
-    return render_template('login.html')
+    if request.method == "GET":
+        return render_template('login.html')
+
+    else: 
+        username = request.form.get('username')
+        password = request.form.get('password')
+
+        if username == "" or password == "" :
+            return render_template('login.html', msg = "Tutti i campi devono essere riempiti")
+
+        cursor = mysql.connection.cursor()
+        query = "SELECT username, password FROM users WHERE username = %s AND password = %s"
+        cursor.execute(query, (username, password))
+        account = cursor.fetchone()
+        cursor.close()
+
+        if account == None:
+            return render_template('login.html', msg = "L'account non esiste o le credenziali non sono corrette")
+
+        return redirect("/personale")
 
 @app.route("/personale")
 def personale():
@@ -34,26 +53,39 @@ def register():
     
     
     else:
-        nome = request.form.get('nome',None)
+        nome = request.form.get('nome')
         cognome = request.form.get('cognome')
         username = request.form.get('username')
         password = request.form.get('password')
         c_password = request.form.get('c_password')
         
-        print("aaaaaaaaa"+nome)
-        if nome == None or cognome == None or username == None or password == None or c_password == None:
+   
+        #Controllo tutti i campi riempiti
+        if nome == "" or cognome == "" or username == "" or password == "" or c_password == "":
             return render_template('register.html', msg = "Tutti i campi devono essere riempiti")
 
+        #Controllo password uguale a conferma password
+        if password != c_password:
+            return render_template('register.html', msg = "Le password non corrispondono")
+
+
+        #Interrogazione per trovare username uguali
+        cursor2 = mysql.connection.cursor()
+        query = "SELECT * FROM users WHERE username = %s"
+        cursor2.execute(query,(username))
+        tupla = cursor2.fetchone();
+        cursor2.close()
+
+        if tupla != None:
+            return render_template('register.html', msg= "Username già esistente")
+
+        #Registrazione
         cursor = mysql.connection.cursor()
         query = "INSERT INTO users VALUES(%s,%s,%s,%s)"
         cursor.execute(query,(nome,cognome,username,password))
-
         mysql.connection.commit()
         
-        
-        
-    
-        return redirect("/")
+        return redirect("/personale")
     
 
     
