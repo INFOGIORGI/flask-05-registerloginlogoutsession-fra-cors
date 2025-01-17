@@ -1,8 +1,11 @@
-from flask import Flask, render_template, request, redirect
+from flask import Flask, render_template, request, redirect, flash
 from flask_mysqldb import MySQL
+from werkzeug.security import generate_password_hash, check_password_hash
 
 
 app = Flask(__name__)
+
+app.secret_key = "il_puzzo"
 
 app.config['MYSQL_HOST'] = '138.41.20.102'
 app.config['MYSQL_PORT'] = 53306
@@ -28,7 +31,9 @@ def login():
         password = request.form.get('password')
 
         if username == "" or password == "" :
-            return render_template('login.html', msg = "Tutti i campi devono essere riempiti")
+            flash("Tutti i campi devono essere riempiti")
+            return redirect('/login')
+        
 
         cursor = mysql.connection.cursor()
         query = "SELECT username, password FROM users WHERE username = %s AND password = %s"
@@ -37,8 +42,11 @@ def login():
         cursor.close()
 
         if account == None:
-            return render_template('login.html', msg = "L'account non esiste o le credenziali non sono corrette")
-
+            flash("L'account non esiste o le credenziali non sono corrette")
+            return redirect('/login')
+                                   
+                                   
+                            
         return redirect("/personale")
 
 @app.route("/personale")
@@ -62,27 +70,32 @@ def register():
    
         #Controllo tutti i campi riempiti
         if nome == "" or cognome == "" or username == "" or password == "" or c_password == "":
-            return render_template('register.html', msg = "Tutti i campi devono essere riempiti")
+             flash("Tutti i campi devono essere riempiti")
+             return redirect('/register')
 
         #Controllo password uguale a conferma password
         if password != c_password:
-            return render_template('register.html', msg = "Le password non corrispondono")
+            flash("Le password non corrispondono")
+            return redirect('/register')
 
 
         #Interrogazione per trovare username uguali
         cursor2 = mysql.connection.cursor()
         query = "SELECT * FROM users WHERE username = %s"
-        cursor2.execute(query,(username))
+        cursor2.execute(query,(username,))
         tupla = cursor2.fetchone();
         cursor2.close()
 
         if tupla != None:
-            return render_template('register.html', msg= "Username già esistente")
+             flash("Username già presente")
+             return redirect('/register')
 
         #Registrazione
         cursor = mysql.connection.cursor()
         query = "INSERT INTO users VALUES(%s,%s,%s,%s)"
-        cursor.execute(query,(nome,cognome,username,password))
+        
+        cursor.execute(query,(username,generate_password_hash(password),nome,cognome))
+      
         mysql.connection.commit()
         
         return redirect("/personale")
